@@ -5,7 +5,6 @@
 #include <time.h>
 #include <chrono>
 #include <thread>
-#include <iomanip>
 
 using namespace std;
 void setCursorPosition(int x, int y){
@@ -70,16 +69,45 @@ void drawDino(int posx, int posy, char **canvas, int dino, bool *gameOverStat){ 
 }
 
 void drawCactus(char **canvas){
-    const string cactus[5] = {
+    const string cactus1[5] = {
         "  _ | |   ",
         " | || | _ ",
         "  \\_  || |",
         "    |  _/ ",
         "   -|_|   ",
     };
+    const string cactus2[5] = {
+        "  ",
+        " ",
+        "     _  ",
+        "    | |) ",
+        "   (|_|   ",
+    };
+    const string cactus3[5] = {
+        " _  _        _    ",
+        "| || | _    | | _ ",
+        " \\_  || | (_  || |",
+        "   |  _/    |  _ )",
+        "  -|_|     -|_|   ",
+    };
+    int randomint = rand() % 3;
+    int offset = 69;
+    const string *cactus;
+    switch (randomint){
+        case 0:
+            cactus = cactus1;
+            break;
+        case 1:
+            cactus = cactus2;
+            break;
+        case 2:
+            cactus = cactus3;
+            offset = 55;
+            break;
+    }
     for(int i = 0; i<5; i++){
-        for(int j=0; j<cactus[i].length(); j++){
-            canvas[i+8][j+69] = cactus[i][j]; //floor = 13 so 13-6 = 7 rows from top actually 8 from testing
+        for(int j=0; j< cactus[i].length(); j++){
+            canvas[i+8][j+offset] = cactus[i][j]; //floor = 13 so 13-6 = 7 rows from top actually 8 from testing
         }
     }
 }
@@ -104,19 +132,26 @@ void clearDino(char **canvas, int lastposx, int lastposy){ //top dino length is 
 
 void drawScore(int score, int highscore,char **canvas){ // HI 000000   000000   2+1+6+3+6 = 18 chars
     string highS = to_string(highscore);
-    highS = setfill('0') << setw(6);
+    while (highS.length() < 6) {
+        highS.insert(0, "0");
+    }
     string scoreS = to_string(score);
-    scoreS = setfill('0') << setw(6);
+    while (scoreS.length() < 6) {
+        scoreS.insert(0, "0");
+    }
     string format = "HI " + highS + "   " + scoreS;
+    for(int i = 0; i < format.length(); i++){
+        canvas[0][i+60] = format[i];
+    }
 }
 
 void drawGameOver(char **canvas){
     string phrase1 = "G A M E   O V E R";
-    string phrase2 = "Type y to try again, ENTER to exit";
+    string phrase2 = "Type y to try again, n to exit";
     for(int i = 0; i < phrase1.length(); i++){
         canvas[3][i+7] = phrase1[i];
     }
-    for(int i = 0; i < phrase1.length(); i++){
+    for(int i = 0; i < phrase2.length(); i++){
         canvas[4][i+7] = phrase2[i];
     }
 }
@@ -135,12 +170,14 @@ void ShowConsoleCursor(bool showFlag)
 void shiftCanvas(char **canvas) {
     for (int i = 0; i < 18; i++) {
         for (int j = 0; j < 79; j++) {
-            canvas[i][j] = canvas[i][j + 3];
+            canvas[i][j] = canvas[i][j + 4];
         }
+        canvas[i][76] = ' ';
         canvas[i][77] = ' ';
         canvas[i][78] = ' ';
         canvas[i][79] = ' ';
     }
+    canvas[13][76] = '_';
     canvas[13][77] = '_';
     canvas[13][78] = '_';
     canvas[13][79] = '_';
@@ -175,33 +212,34 @@ void startGame(int *high){
         //Dino event handlers
         shiftCanvas(canvas);
         if(GetKeyState(VK_SPACE) & 0x8000 && dinoVelocity == 0 && canJump == true){
-            dinoVelocity = 8;
+            dinoVelocity = 7;
             canJump = false;
+            posy -= 1;
         }
 
         if(dinoVelocity != 0){
             posy -= 1;
             dinoVelocity -= 1;
-            dinostate = 0;
+            drawDino(posy,posx,canvas, 0, &gameOver);
         }
         else{
             if(posy < 8){
                 posy += 1;
             }
+            drawDino(posy,posx,canvas, dinostate%2 + 1, &gameOver); //y, x, default 6, 0
         }
         if (posy == 8){
             canJump = true;
         }
         //cactus event handlers
-        if(timePassed >= 1000){
+        if(timePassed >= 500){
             drawCactus(canvas);
             timePassed = 0;
         }
-        drawDino(posy,posx,canvas, dinostate%3, &gameOver); //y, x, default 6, 0
         dinostate++;
-        drawScore(*high, score, canvas);
+        drawScore(score, *high, canvas);
         printCanvas(canvas); //renders this frame
-        this_thread::sleep_for(chrono::milliseconds(20));
+        this_thread::sleep_for(chrono::milliseconds(10));
         timePassed += 20;
         score += 5;
     }
@@ -223,10 +261,12 @@ void pregame(int *high){
     setCursorPosition(0, 14);
     ShowConsoleCursor(true);
     cin >> userinput;
+    system("cls");
     if(userinput == 'y'){
         pregame(high);
     }
     cout << "Thanks for playing! Hope to see you again.";
+    sleep(1);
 }
 
 int main(){
