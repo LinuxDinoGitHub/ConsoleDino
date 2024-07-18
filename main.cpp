@@ -12,8 +12,18 @@ void printCanvas(const char canvas[][50]) {
     }
 }
 
-void drawDino(int posx, int posy, const char *canvas){
-    return;
+void drawDino(int posx, int posy, const char *canvas){ //posx and pos y referes to top right of screen
+    const string dino[5] = 
+    {"              / _",
+    "     _.----._/ /",
+    "    /         /",
+    " __/ (  | (  |",
+    "/__.-'|_|--|_|"};
+    for(int i = 0; i<dino->length(); i++){
+        for(char c : line){
+            break;
+        }
+    }
 }
 
 
@@ -24,12 +34,6 @@ int main(){
             canvas[i][j] = ' ';
         }
     }
-    /*const string dino[5] = 
-    {"              / _",
-    "     _.----._/ /",
-    "    /         /",
-    " __/ (  | (  |",
-    "/__.-'|_|--|_|"}; */
     printCanvas(canvas);
     return 0;
 }
