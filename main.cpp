@@ -7,9 +7,17 @@
 #include <thread>
 
 using namespace std;
+void setCursorPosition(int x, int y){
+    static const HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    cout.flush();
+    COORD coord = { (SHORT)x, (SHORT)y };
+    SetConsoleCursorPosition(hOut, coord);
+}
+
 
 void printCanvas(char **canvas) {
     for (int i = 0; i < 18; i++) {
+        setCursorPosition(0,i);
         for (int j = 0; j < 80; j++) {
             cout << canvas[i][j];
         }
@@ -55,6 +63,21 @@ void drawDino(int posx, int posy, char **canvas, int dino){ //posx and pos y ref
     }
 }
 
+void drawCactus(char **canvas){
+    const string cactus[5] = {
+        "  _ | |   ",
+        " | || | _ ",
+        "  \\_  || |",
+        "    |  _/ ",
+        "   -|_|   ",
+    };
+    for(int i = 0; i<5; i++){
+        for(int j=0; j<cactus[i].length(); j++){
+            canvas[i+8][j+69] = cactus[i][j]; //floor = 13 so 13-6 = 7 rows from top actually 8 from testing
+        }
+    }
+}
+
 void clearDino(char **canvas, int lastposx, int lastposy){ //top dino length is 19
     const string dinoSize[5] = 
     {"              / ._|",
@@ -69,10 +92,6 @@ void clearDino(char **canvas, int lastposx, int lastposy){ //top dino length is 
     }
 }
 
-int touching(char **canvas){
-    return 0;
-}
-
 void ShowConsoleCursor(bool showFlag)
 {
     HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -82,6 +101,18 @@ void ShowConsoleCursor(bool showFlag)
     GetConsoleCursorInfo(out, &cursorInfo);
     cursorInfo.bVisible = showFlag; // set the cursor visibility
     SetConsoleCursorInfo(out, &cursorInfo);
+}
+
+void shiftCanvas(char **canvas) {
+    for (int i = 0; i < 18; i++) {
+        for (int j = 0; j < 79; j++) {
+            canvas[i][j] = canvas[i][j + 2];
+        }
+        canvas[i][78] = ' ';
+        canvas[i][79] = ' ';
+    }
+    canvas[13][78] = '_';
+    canvas[13][79] = '_';
 }
 
 void startGame(){
@@ -102,15 +133,20 @@ void startGame(){
             }
         }
     }
-    int dinoVelocity = 0;
-    int timePassed = 0;
+    int dinoVelocity = 0; // upwards
+    int timePassed = 0; // for cactus
+    bool touchingGround = true;
     int posx = 0;
     int posy = 8;
     while(!gameOver){ //Runs every frame
         clearDino(canvas, posx, posy);
-        if(GetKeyState(VK_SPACE) & 0x8000 && dinoVelocity == 0){
+        //Dino event handlers
+        shiftCanvas(canvas);
+        if(GetKeyState(VK_SPACE) & 0x8000 && dinoVelocity == 0 && touchingGround == true){
             dinoVelocity = 6;
+            touchingGround == false;
         }
+
         if(dinoVelocity != 0){
             posy -= 1;
             dinoVelocity -= 1;
@@ -120,12 +156,20 @@ void startGame(){
             if(posy < 8){
                 posy += 1;
             }
+            if (posy == 8){
+                touchingGround == true;
+            }
+        }
+        //cactus event handlers
+        if(timePassed >= 1000){
+            drawCactus(canvas);
+            timePassed = 0;
         }
         drawDino(posy,posx,canvas, dinostate%3); //y, x, default 6, 0
         dinostate++;
-        this_thread::sleep_for(chrono::milliseconds(200));
-        system("cls");
-        printCanvas(canvas);
+        this_thread::sleep_for(chrono::milliseconds(20));
+        timePassed += 20;
+        printCanvas(canvas); //renders this frame
     }
     for(int i = 0; i < 18; i++) {
         delete[] canvas[i];
