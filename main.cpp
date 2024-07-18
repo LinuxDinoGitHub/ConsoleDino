@@ -3,6 +3,8 @@
 #include <windows.h>
 #include <unistd.h>
 #include <time.h>
+#include <chrono>
+#include <thread>
 
 using namespace std;
 
@@ -71,7 +73,21 @@ int touching(char **canvas){
     return 0;
 }
 
+void ShowConsoleCursor(bool showFlag)
+{
+    HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
+
+    CONSOLE_CURSOR_INFO     cursorInfo;
+
+    GetConsoleCursorInfo(out, &cursorInfo);
+    cursorInfo.bVisible = showFlag; // set the cursor visibility
+    SetConsoleCursorInfo(out, &cursorInfo);
+}
+
 void startGame(){
+    ShowConsoleCursor(false);
+    bool gameOver = false;
+    int dinostate = 0;
     char **canvas = new char*[14];
     for (int i = 0; i < 14; i++) {
         canvas[i] = new char[80];
@@ -86,17 +102,16 @@ void startGame(){
             }
         }
     }
-    int dinostate = 0;
+    /*
     while (dinostate<30){
         clearDino(canvas, 6,0);
         drawDino(6,0,canvas, dinostate%3); //y, x, default 6, 0
         dinostate++;
         printCanvas(canvas);
-        sleep(0.5);
+        this_thread::sleep_for(chrono::milliseconds(200));
         system("cls");
-        sleep(0.1);
-    }
-    for (int i = 0; i < 14; i++) {
+    }*/
+    for(int i = 0; i < 14; i++) {
         delete[] canvas[i];
     }
     delete[] canvas;
